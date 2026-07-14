@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 using namespace std::chrono;
@@ -37,6 +38,10 @@ namespace librealsense
 
     // _min_command_delay sentinel before any sample was measured.
     static const double initial_min_command_delay_ms = 1000.;
+
+    // The HW clock is a 32-bit microsecond counter; it wraps one tick past its max value.
+    static constexpr double hw_clock_wrap_ms =
+        ( static_cast<double>( std::numeric_limits<uint32_t>::max() ) + 1.0 ) * MICROSEC_TO_MILLISEC;
 
     CSample& CSample::operator-=(const CSample& other)
     {
@@ -217,14 +222,13 @@ namespace librealsense
     // so that the global timestamp can be correctly computed
     bool CLinearCoefficients::update_samples_base(double x)
     {
-        static const double max_device_time(pow(2, 32) * MICROSEC_TO_MILLISEC);
         double base_x;
         if (_last_values.empty())
             return false;
-        if ((_last_values.front()._x - x) > max_device_time / 2)
-            base_x = max_device_time;
-        else if ((x - _last_values.front()._x) > max_device_time / 2)
-            base_x = -max_device_time;
+        if ((_last_values.front()._x - x) > hw_clock_wrap_ms / 2)
+            base_x = hw_clock_wrap_ms;
+        else if ((x - _last_values.front()._x) > hw_clock_wrap_ms / 2)
+            base_x = -hw_clock_wrap_ms;
         else
             return false;
         LOG_DEBUG(__FUNCTION__ << "(" << base_x << ")");
@@ -253,11 +257,10 @@ namespace librealsense
     // whole wrap periods onto the samples' epoch and leave the fit untouched.
     double CLinearCoefficients::to_fit_domain(double x) const
     {
-        static const double max_device_time(pow(2, 32) * MICROSEC_TO_MILLISEC);
         if (_last_values.empty())
             return x;
-        double k = std::round((_last_values.front()._x - x) / max_device_time);
-        return x + k * max_device_time;
+        double k = std::round((_last_values.front()._x - x) / hw_clock_wrap_ms);
+        return x + k * hw_clock_wrap_ms;
     }
 
     time_diff_keeper::time_diff_keeper(global_time_interface* dev, const unsigned int sampling_interval_ms) :
