@@ -95,6 +95,10 @@ namespace librealsense
         bool _is_ready;
     };
 
+    // Instantiated per-sensor (e.g. d400-device.cpp, d400-color.cpp, d400-motion.cpp); sensors share
+    // only the device-wide time_diff_keeper. All streams of one sensor (e.g. depth + IR) are stamped
+    // by the same device HW clock, so the last-frame state below is coherent across its interleaved
+    // streams. A multi-pin sensor may call in concurrently from per-pin streaming threads.
     class global_timestamp_reader : public frame_timestamp_reader
     {
     public:
