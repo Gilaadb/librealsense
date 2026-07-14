@@ -471,8 +471,10 @@ namespace librealsense
             if (sp)
             {
                 double hw_time = frame_time;
-                frame_time = sp->get_system_hw_time(hw_time, _ts_is_ready);
-                if (_ts_is_ready)
+                bool ts_is_ready = false;
+                frame_time = sp->get_system_hw_time(hw_time, ts_is_ready);
+                _ts_is_ready = ts_is_ready;
+                if (ts_is_ready)
                     frame_time = enforce_monotonicity(hw_time, frame_time);
             }
             else

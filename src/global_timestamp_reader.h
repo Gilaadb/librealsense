@@ -6,6 +6,7 @@
 #include "sensor.h"
 #include "error-handling.h"
 #include "option.h"
+#include <atomic>
 #include <deque>
 
 namespace librealsense
@@ -114,7 +115,7 @@ namespace librealsense
         std::weak_ptr<time_diff_keeper> _time_diff_keeper;
         mutable std::recursive_mutex _mtx;
         std::shared_ptr<global_time_option> _option_is_enabled;
-        bool _ts_is_ready;
+        std::atomic<bool> _ts_is_ready;
         double _last_hw_time_ms;        // HW timestamp of the last frame (-1 if none yet).
         double _last_global_time_ms;    // Global timestamp given to the last frame.
     };
